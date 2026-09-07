@@ -1,0 +1,648 @@
+<!-- The shipped file is a fragment with no <head>, so Chrome sniffs the encoding
+     from the first KB. Declare it: the em dashes and arrows are UTF-8. -->
+<meta charset="utf-8">
+<!-- Without this a phone lays the page out at 980px and scales it down: every
+     font is unreadable and none of the max-width queries below ever match. The
+     Artifact wrapper supplies one too; declaring it here as well is what makes
+     the file work opened straight off disk on a phone. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabin Loop Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --bg:#EDF0EF; --sunk:#E2E7E6; --surface:#FFFFFF; --raised:#F7F9F8;
+  --ink:#0E1618; --ink-2:#33474C; --muted:#63797E; --faint:#8CA0A4;
+  --line:#D2DBD9; --line-2:#BDC9C7;
+  --accent:#1E6B78; --accent-ink:#FFFFFF; --accent-wash:#DCECEE;
+  --tok-red:#B22B3C; --tok-green:#2E7D46; --tok-gold:#9A7412; --tok-blue:#2A5EA8;
+  --tok-red-bg:#FBE7E9; --tok-green-bg:#E2F1E7; --tok-gold-bg:#F7EDD6; --tok-blue-bg:#E3ECFA;
+  /* Explore mode is a second map behind the first, so it gets a hue of its own,
+     clear of the four token colours (those are reserved as data) and of the
+     moonstone accent (that means "what this gets you"). */
+  --explore:#6A54A6; --explore-ink:#FFFFFF; --explore-wash:#EDE9F8;
+  /* The weekend's four days. A neutral, biased toward the accent teal rather
+     than a stock grey, so a chapter heading reads as structure and never as
+     one more piece of data. */
+  --band:#E7EDEC; --band-line:#C6D2D0;
+  --on:#1E6B78; --off:#B2453C;
+  --shadow:0 1px 2px rgba(14,22,24,.06), 0 8px 24px -12px rgba(14,22,24,.18);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+    --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+    --line:#25353A; --line-2:#33474D;
+    --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+    --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+    --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+    --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+    --band:#1E2B30; --band-line:#364A50;
+    --on:#7FD1D9; --off:#EC7B85;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+  --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+  --line:#25353A; --line-2:#33474D;
+  --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+  --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+  --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+  --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+  --band:#1E2B30; --band-line:#364A50;
+  --on:#7FD1D9; --off:#EC7B85;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Karla",ui-sans-serif,system-ui,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  /* Chrome and Samsung Internet both inflate text in narrow columns unless told
+     not to, which breaks the two-column rows below at exactly the widths that
+     can least afford it. */
+  -webkit-text-size-adjust:100%; text-size-adjust:100%;
+  /* last-ditch: nothing here should ever be wider than the screen, and a phone
+     that lets the body scroll sideways hides the right edge of every card */
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:"Zilla Slab",Georgia,serif; margin:0; text-wrap:balance; font-weight:600}
+button{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+
+/* ---------- shell ---------- */
+.masthead{
+  border-bottom:1px solid var(--line); background:var(--surface);
+  padding:18px clamp(16px,3vw,28px);
+  display:flex; gap:20px; align-items:baseline; flex-wrap:wrap;
+}
+.masthead h1{font-size:24px; letter-spacing:-.01em}
+.masthead h1 span{color:var(--accent)}
+.masthead p{margin:0; color:var(--muted); font-size:13.5px; max-width:62ch}
+.tag{
+  margin-left:auto; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); border:1px solid var(--line); border-radius:99px; padding:4px 10px;
+  white-space:nowrap;
+}
+/* Both tracks are minmax(0,…): a bare `1fr` is minmax(auto,1fr), so the widest
+   unbreakable thing in either column -- a scene name, a Ren'Py condition -- sets
+   a floor the track cannot go under, and on a phone that floor pushed the whole
+   grid past the screen. */
+.shell{display:grid; grid-template-columns:minmax(280px,340px) minmax(0,1fr); min-height:calc(100vh - 74px)}
+.rail,.plan{min-width:0}
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  /* the 74px is the masthead's height at desktop widths; once it wraps to three
+     lines the calc reserves a screenful of nothing under a short plan */
+  .shell{min-height:0}
+}
+
+/* ---------- rail ---------- */
+.rail{
+  border-right:1px solid var(--line); background:var(--sunk);
+  display:flex; flex-direction:column; gap:14px; padding:16px;
+  max-height:calc(100vh - 74px); position:sticky; top:0; overflow:hidden;
+}
+@media (max-width:900px){.rail{position:static; max-height:none; border-right:0; border-bottom:1px solid var(--line)}}
+.eyebrow{
+  font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--faint); font-weight:700;
+}
+.roster{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:8px}
+.who{
+  display:flex; align-items:center; gap:7px; padding:7px 8px; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  font-size:13px; font-weight:600; text-align:left; transition:border-color .12s, background .12s;
+  min-width:0;
+}
+.who span:last-child{overflow:hidden; text-overflow:ellipsis}
+.who:hover{border-color:var(--line-2)}
+.who[aria-pressed="true"]{background:var(--accent-wash); border-color:var(--accent)}
+.dot{width:9px; height:9px; border-radius:99px; flex:none; box-shadow:0 0 0 1px rgba(0,0,0,.18) inset}
+
+.search{
+  width:100%; padding:8px 10px; border-radius:8px; background:var(--surface);
+  border:1px solid var(--line); color:var(--ink); font-size:13.5px;
+}
+.search::placeholder{color:var(--faint)}
+.kinds{display:flex; gap:4px; margin-top:8px}
+.kind{
+  flex:1 1 0; min-width:0; padding:6px 4px; font-size:12px; font-weight:600; cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); border-radius:7px;
+}
+.kind[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.kind .n{font-variant-numeric:tabular-nums; color:var(--faint); font-weight:500}
+.kind[aria-pressed="true"] .n{color:var(--accent-ink); opacity:.75}
+
+.list{overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:3px; padding-right:4px; flex:1; min-height:120px}
+/* dvh, not vh: on a phone `100vh` is the height with the URL bar hidden, so a vh
+   budget makes the list taller than the screen it is supposed to fit inside. */
+@media (max-width:900px){.list{max-height:44vh; max-height:44dvh}}
+/* No `width:100%`: the list is a column flex box, so a row already stretches to
+   it -- and 100% *plus* the 10px indent an event row gets under its scene
+   heading is 10px wider than the rail, which is a sideways scrollbar. */
+.item{
+  display:flex; align-items:center; gap:8px; text-align:left; cursor:pointer;
+  padding:8px 10px; border-radius:8px; background:transparent; border:1px solid transparent;
+  font-size:13.5px;
+}
+.item:hover{background:var(--surface)}
+.item[aria-pressed="true"]{background:var(--surface); border-color:var(--accent)}
+.item .txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.item .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.item .why{
+  font-size:11px; font-style:italic; color:var(--faint);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.rung{
+  font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint);
+  border:1px solid var(--line); border-radius:4px; padding:1px 4px; flex:none;
+}
+.swatch{width:4px; align-self:stretch; border-radius:2px; flex:none}
+.empty{color:var(--faint); font-size:13px; padding:14px 10px; font-style:italic}
+
+/* ---- event headings ---- */
+/* The Events rail is the end-of-loop checklist's own shape: a corruption row,
+   then the scenes that pay into it. Both headings pin, at two different tops,
+   so a name halfway down never loses either. The opaque backgrounds are what
+   let them: the rail is a scroll container, and a translucent heading would
+   show the rows sliding under it. */
+.grp{
+  position:sticky; top:0; z-index:2;
+  display:flex; align-items:center; gap:8px;
+  margin-top:12px; padding:5px 10px 4px; background:var(--sunk);
+  font-size:10.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--accent); border-bottom:1px solid var(--line);
+  /* the list is a 3px-gap flex column, and a pinned heading does not paint its
+     own gap -- rows would show through the sliver under it */
+  box-shadow:0 3px 0 var(--sunk);
+}
+.list > .grp:first-child{margin-top:0}
+.grpn{
+  margin-left:auto; letter-spacing:.06em; color:var(--faint); font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.sub{
+  position:sticky; top:26px; z-index:1;
+  padding:6px 10px 3px; background:var(--sunk);
+  font-family:"Zilla Slab",Georgia,serif; font-size:13px; font-weight:600;
+  color:var(--ink-2); box-shadow:0 3px 0 var(--sunk);
+}
+/* the rows under a scene heading are that scene's, so they are indented under
+   it. Indent alone, not a rule -- .item already spends all four borders on the
+   selected state. */
+.sub ~ .item{margin-left:10px}
+
+/* ---------- plan ---------- */
+/* `clip` rather than `hidden`: hidden makes this a scroll container, which would
+   silently kill position:sticky on the day headings inside it. */
+.plan{padding:clamp(14px,2.4vw,26px); overflow-x:hidden; overflow-x:clip; max-width:1180px}
+/* The plan quotes the game's own strings -- branch ids, Ren'Py conditions, menu
+   options -- and several run past 40 characters with nothing to break on. Only
+   `anywhere` (not `break-word`) shrinks an element's min-content contribution,
+   and that contribution is what pushes a grid track wider than a phone. */
+.plan,.rail{overflow-wrap:anywhere}
+.hint{color:var(--muted); max-width:60ch}
+.hint h2{font-size:19px; margin-bottom:8px}
+.plan-head{display:flex; align-items:flex-start; gap:14px; flex-wrap:wrap; margin-bottom:6px}
+.plan-head h2{font-size:26px; letter-spacing:-.01em}
+.plan-sub{color:var(--muted); font-size:13.5px; margin-top:2px}
+.gamehint{color:var(--faint); font-size:13px; margin-top:6px; max-width:66ch; font-style:italic}
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+.chip{
+  font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  border-radius:99px; padding:3px 9px; border:1px solid transparent;
+}
+.chip.Red{color:var(--tok-red); background:var(--tok-red-bg); border-color:var(--tok-red)}
+.chip.Green{color:var(--tok-green); background:var(--tok-green-bg); border-color:var(--tok-green)}
+.chip.Gold{color:var(--tok-gold); background:var(--tok-gold-bg); border-color:var(--tok-gold)}
+.chip.Blue{color:var(--tok-blue); background:var(--tok-blue-bg); border-color:var(--tok-blue)}
+.chip.plain{color:var(--muted); border-color:var(--line); background:var(--raised)}
+
+.routes{display:flex; gap:5px; margin:16px 0 0; flex-wrap:wrap}
+.rbtn{
+  padding:5px 11px; font-size:12.5px; font-weight:600; cursor:pointer; border-radius:7px;
+  background:var(--surface); border:1px solid var(--line);
+}
+.rbtn[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:16px 18px; margin-top:14px;
+}
+.card > h3{
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+  font-family:"Karla",sans-serif; font-weight:700; margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.card > h3::after{content:""; flex:1; height:1px; background:var(--line)}
+
+.reqgrid{display:flex; flex-direction:column; gap:14px}
+.reqrow{display:grid; grid-template-columns:150px minmax(0,1fr); gap:12px; align-items:start}
+@media (max-width:640px){.reqrow{grid-template-columns:1fr; gap:4px}}
+.reqlabel{font-size:12px; font-weight:700; color:var(--muted); padding-top:3px}
+.toggles{display:flex; flex-wrap:wrap; gap:6px}
+.toggle{
+  display:inline-flex; align-items:center; gap:7px; padding:5px 10px 5px 7px;
+  border-radius:7px; border:1px solid var(--line); background:var(--raised); font-size:13px;
+}
+.toggle b{font-weight:700}
+.state{
+  font-size:10px; font-weight:700; letter-spacing:.08em; padding:2px 6px; border-radius:4px;
+  border:1px solid currentColor; font-family:"IBM Plex Mono",monospace;
+}
+.state.on{color:var(--on)} .state.off{color:var(--off)} .state.cap{color:var(--off)}
+/* The end-of-loop menu is a grid of decisions per girl, so the card is a table:
+   the position to switch on, how far she may go, and the modifiers beside the
+   ladder. As pills these ran together and read as contradictions -- a girl can
+   be capped at Uncorrupted and still have Package on, because they are
+   different rows of the menu. Columns appear only when some row uses them. */
+.rtable{border-collapse:collapse; width:100%; font-size:13.5px}
+.rtable th{
+  text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); font-family:"Karla",sans-serif;
+  padding:0 12px 6px 0; border-bottom:1px solid var(--line); white-space:nowrap;
+}
+.rtable td{padding:7px 12px 7px 0; border-bottom:1px solid var(--line); vertical-align:middle}
+.rtable tr:last-child td{border-bottom:0}
+.rtable td:last-child, .rtable th:last-child{padding-right:0}
+/* not a flex container: `display:flex` on a `td` overrides `vertical-align`,
+   so the name drifts off the baseline of the cells beside it on any row tall
+   enough to hold a modifier pill */
+.rwho{white-space:nowrap}
+.rwho .dot{display:inline-block; vertical-align:middle; margin-right:7px}
+.rwho b{vertical-align:middle}
+.rmin{font-weight:700; color:var(--on)}
+.rcap{font-weight:700; color:var(--off)}
+/* "no opinion" has to look like an answer, not like a missing cell */
+.rnone{color:var(--faint)}
+.rtable .toggle.mod{margin:1px 5px 1px 0; padding:3px 7px 3px 9px}
+.reqline{font-size:13.5px; color:var(--ink-2)}
+.recipe{margin:5px 0 12px 14px; border-left:2px solid var(--line); padding-left:10px}
+.recipe-row{font-size:12.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}
+.reqline + .reqline{margin-top:5px}
+.gauge{display:flex; align-items:center; gap:10px}
+.gauge .bar{height:6px; flex:1 1 0; min-width:0; max-width:220px; background:var(--sunk); border-radius:99px; overflow:hidden; border:1px solid var(--line)}
+.gauge .fill{height:100%; background:var(--accent)}
+.gauge b{font-variant-numeric:tabular-nums}
+
+/* itinerary — a recessed track holding one raised block per day, so the four
+   days read as four objects and a bare "Night" belongs visibly to one of them */
+.itin{
+  display:flex; flex-direction:column; gap:14px;
+  background:var(--sunk); border-radius:10px; padding:10px;
+}
+.day{
+  display:flex; flex-direction:column; gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:9px;
+  /* clip, not hidden: hidden would make this a scroll container and the sticky
+     day heading inside it would never pin. hidden stays as the fallback. */
+  overflow:hidden; overflow:clip;
+}
+.row{display:grid; grid-template-columns:132px minmax(0,1fr); gap:0; background:var(--surface)}
+.row.free{background:var(--raised)}
+.row.act .slotcell{border-left:3px solid var(--accent)}
+.row.goal{background:var(--accent-wash)}
+.row.goal .slotcell{border-left:3px solid var(--accent)}
+/* a slot a multi-sitting scene already swallowed: occupied, but nothing to do
+   in it, so it is neither a step nor free */
+.row.eaten{background:var(--raised)}
+.row.eaten .slotcell{border-left:3px solid var(--line-2)}
+.slotcell{
+  padding:9px 12px; font-size:12px; font-weight:700; color:var(--muted);
+  border-left:3px solid transparent; display:flex; align-items:baseline; gap:5px;
+}
+/* a scene sharing the sitting named above it: still named, but not re-announced */
+.slotcell.cont{color:var(--faint); font-weight:500}
+.contmark{color:var(--line-2)}
+
+/* ---- day chapters ---- */
+/* Pinned inside its own day block: while any row of Saturday is on screen, the
+   word "Saturday" is on screen directly above it. That is what makes a bare
+   "Night" readable in isolation halfway down a dense plan. */
+.dayband{
+  display:flex; align-items:center; gap:12px; padding:10px 14px 9px;
+  background:var(--band); border-left:3px solid transparent;
+  border-bottom:1px solid var(--band-line);
+  position:sticky; top:0; z-index:2;
+}
+.dayband h4{font-size:15.5px; letter-spacing:-.005em; color:var(--ink); line-height:1.2}
+.drule{flex:1; height:1px; background:var(--band-line); min-width:12px}
+.daymeta{
+  font-size:10.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+/* the day the payoff lands in — the one chapter worth finding first */
+.dayband.goal{border-left-color:var(--accent)}
+.dayband.goal .daymeta{color:var(--accent)}
+/* a day the plan asks nothing of: the heading is also the way to open it */
+.dayfold{
+  width:100%; text-align:left; cursor:pointer; transition:background .12s;
+  border-right:0; border-bottom:0;   /* the band supplies top and left */
+}
+.dayfold:hover{background:var(--sunk)}
+.dayfold h4{color:var(--muted); font-weight:500}
+.dayfold:hover h4,
+.dayfold[aria-expanded="true"] h4{color:var(--ink)}   /* opened, it is a chapter again */
+
+/* ---- a folded run of slots with nothing in them ---- */
+.gapwrap{display:flex; flex-direction:column; gap:1px; background:var(--line)}
+.gap{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:7px 14px 7px 11px; cursor:pointer; background:var(--sunk);
+  border:0; border-left:3px solid transparent; transition:background .12s;
+}
+.gap:hover{background:var(--raised)}
+.gapchev{
+  width:0; height:0; flex:none; margin-left:3px;
+  border-left:5px solid var(--faint);
+  border-top:4px solid transparent; border-bottom:4px solid transparent;
+  transition:transform .13s ease;
+}
+[aria-expanded="true"] .gapchev{transform:rotate(90deg)}
+.gaprange{font-size:12px; font-weight:700; color:var(--muted)}
+.gapn{
+  font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); font-variant-numeric:tabular-nums;
+  border:1px solid var(--line-2); border-radius:99px; padding:1px 8px; white-space:nowrap;
+}
+.gapsay{margin-left:auto; font-size:12px; font-style:italic; color:var(--faint)}
+@media (max-width:760px){.gapsay{display:none}}
+.gapbody{display:flex; flex-direction:column; gap:1px}
+[hidden]{display:none!important}
+
+.actcell{padding:9px 12px; min-width:0}
+.actcell.none{color:var(--faint); font-style:italic; font-size:12.5px}
+.scene{font-size:14px; font-weight:600}
+.goalpill{
+  font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  background:var(--accent); color:var(--accent-ink); border-radius:4px; padding:1px 6px; margin-left:7px;
+}
+/* a scene that costs no sitting: the game plays it on its own, or hands the
+   timeslot straight back, so the map for that slot is still to come */
+.freepill{
+  font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  border:1px solid var(--accent); color:var(--accent); border-radius:4px;
+  padding:0 6px; margin-left:7px; white-space:nowrap;
+}
+/* which room on the cabin map to click. Deliberately quieter than the accent
+   pills beside it -- it is where you go, not what you get. */
+.placepill{
+  font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  border:1px solid var(--line-2); color:var(--muted); background:var(--sunk);
+  border-radius:4px; padding:1px 6px; margin-left:7px; white-space:nowrap;
+}
+.row.nocost{background:var(--raised)}
+.row.nocost .slotcell{border-left:3px dotted var(--accent)}
+/* Explore steps are a different kind of instruction -- a mode you switch the map
+   into, not a scene you click -- so the row carries its own colour end to end. */
+.row.expl .slotcell{border-left:3px solid var(--explore)}
+.row.expl.nocost .slotcell{border-left:3px dotted var(--explore)}
+.explorepill{
+  font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  border:1px solid var(--explore); color:var(--explore); background:var(--explore-wash);
+  border-radius:4px; padding:0 6px; margin-left:7px; white-space:nowrap;
+}
+.note{font-size:12.5px; color:var(--muted); margin-top:3px; font-style:italic}
+.route{font-size:12.5px; color:var(--muted); margin-top:3px}
+.route b{color:var(--ink-2); font-weight:600}
+/* Explore → Location → Action: one trail, because that is one instruction */
+.route.trail{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px}
+.route.trail b{font-size:13px}
+.exptok{
+  font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  background:var(--explore); color:var(--explore-ink); border-radius:4px; padding:2px 7px;
+}
+.route.trail .arrow{color:var(--faint)}
+.picks{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px}
+.pick{
+  font-size:12.5px; font-weight:600; border:1px solid var(--accent); color:var(--accent);
+  border-radius:6px; padding:2px 9px; background:var(--accent-wash);
+}
+/* A hypnosis session is four menus one after another, one pick from each, and
+   the same picks move both girls' counters at once. A flat chip row like
+   `.picks` cannot say that -- the order *is* the instruction, and so is what
+   each pick costs the other girl -- so the session gets a panel of its own. */
+.trance{
+  margin-top:8px; border:1px solid var(--line); border-radius:8px;
+  background:var(--sunk); padding:8px 10px;
+}
+.trance .th{
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  font-size:10.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--muted);
+}
+.trneed{
+  border:1px solid var(--accent); color:var(--accent); background:var(--accent-wash);
+  border-radius:4px; padding:1px 6px; letter-spacing:.04em;
+}
+.trance ol{margin:7px 0 0; padding:0; list-style:none; counter-reset:tr}
+.trance li{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:8px;
+  font-size:13px; padding:4px 0; border-top:1px solid var(--line);
+}
+.trance li:first-child{border-top:0}
+.trance li::before{
+  counter-increment:tr; content:counter(tr) "."; color:var(--faint);
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; min-width:15px;
+}
+.trance li b{font-weight:600; color:var(--ink-2)}
+/* Both counters, and each one has to stay whole -- but the pair may wrap onto a
+   second line rather than push the row sideways on a phone. */
+.tradd{
+  margin-left:auto; display:flex; flex-wrap:wrap; gap:2px 10px;
+  font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted);
+}
+.tradd span{white-space:nowrap}
+.tradd .up{color:var(--on)}
+.tradd .dn{color:var(--off)}
+.trtot{margin-top:7px; font-size:12px; color:var(--muted)}
+.trtot b{color:var(--ink-2); font-weight:600}
+.trmod{font-size:12.5px; color:var(--muted); margin-top:5px; font-style:italic}
+.yield{font-size:12px; color:var(--muted); margin-top:5px}
+.yield span{
+  border:1px solid var(--line); border-radius:4px; padding:1px 6px; margin-right:5px;
+  display:inline-block; color:var(--ink-2);
+}
+.warn{
+  font-size:12.5px; color:var(--off); margin-top:5px;
+  border-left:2px solid var(--off); padding-left:8px;
+}
+/* The negative half of a step's requirements. Mostly true before the player
+   does anything -- the setup card answers most of it -- so it is metadata, not
+   an alarm, and a stack of `.warn` bars outweighed the instruction it belongs
+   to. One quiet row instead, a step below the `.yield` gains it sits under,
+   with the colour spent on the header alone. */
+.avoid{display:flex; flex-wrap:wrap; align-items:baseline; gap:5px; margin-top:6px}
+.avoidh{
+  font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--off); white-space:nowrap;
+}
+.avoidp{
+  font-size:11.5px; color:var(--muted); background:var(--sunk);
+  border:1px solid var(--line); border-radius:4px; padding:1px 7px;
+}
+/* `NOT (NOT x)` is a requirement, not an avoid -- it must not read as one */
+.avoidp.need, .avoidp.careful{color:var(--ink-2)}
+/* the setup card switches this very rung on, so the plan contradicts itself.
+   The rest of the row is deliberately quiet metadata; this one is not. */
+.avoidp.clash{color:var(--off); border-color:var(--off); font-weight:700}
+.avoidmore{
+  font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); font-variant-numeric:tabular-nums; font-family:inherit;
+  border:1px solid var(--line-2); border-radius:99px; padding:1px 8px;
+  background:transparent; cursor:pointer; white-space:nowrap;
+}
+.avoidmore:hover{color:var(--muted); border-color:var(--muted)}
+/* opened, a 370-character compound has to wrap inside its pill rather than
+   push the row sideways */
+.avoid.open .avoidp{white-space:normal}
+.loopbar{
+  display:flex; align-items:center; gap:9px; margin:14px 0 6px; font-size:12px;
+  font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+}
+.loopbar::after{content:""; flex:1; height:1px; background:var(--line)}
+.statline{display:flex; align-items:center; gap:9px; font-size:13.5px; margin-top:6px; flex-wrap:wrap}
+/* the ways to raise a slot-scoped stat inside the gated scene. It had no rule at
+   all, so it kept the browser's 40px list indent and hung off the card. */
+.anyof{margin:4px 0 0; padding-left:18px; font-size:12.5px; color:var(--muted)}
+.statline .by{
+  font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:1px 6px;
+}
+.ok{color:var(--on); font-weight:700}
+.bad{color:var(--off); font-weight:700}
+.lead{color:var(--muted); font-size:13px; margin:0 0 12px; max-width:70ch}
+.foot{
+  margin-top:24px; padding:14px 18px; border-top:1px solid var(--line);
+  color:var(--faint); font-size:12px; max-width:78ch;
+}
+.foot code{font-family:"IBM Plex Mono",monospace}
+
+/* ================= narrow screens =================
+   One rule throughout: nothing scrolls sideways. Everything below either folds a
+   two-column arrangement into one, or gives back the width that fixed padding
+   and fixed columns were spending. Verified with a probe that renders 90 targets
+   at a 360px viewport and reports every box wider than the screen. */
+
+/* ---- the itinerary row, stacked ----
+   Under 640px the slot name sits above the action instead of beside it. The
+   status colour lived on the slot cell's left border, which in that arrangement
+   marks only the first line of a tall step -- so the border moves to the whole
+   row and the cell gives its own up. */
+@media (max-width:640px){
+  .row{grid-template-columns:minmax(0,1fr); border-left:3px solid transparent}
+  .slotcell{border-left:0!important; padding:8px 12px 0}
+  .actcell{padding-top:3px}
+  .row.act, .row.goal{border-left-color:var(--accent)}
+  .row.expl{border-left-color:var(--explore)}
+  .row.eaten{border-left-color:var(--line-2)}
+  .row.nocost{border-left-style:dotted}
+  /* the slot name is the row's own heading now, so it carries the weight */
+  .slotcell{font-size:12.5px; color:var(--ink-2)}
+  .slotcell.cont{color:var(--muted); font-weight:600}
+}
+
+/* ---- the setup roster, stacked ----
+   Four columns of a table cannot fit a phone, and the alternative -- letting it
+   scroll inside the card -- hides the very column ("Max corruption") the player
+   is least likely to guess at. So each girl becomes a block with her name as its
+   heading and one labelled line per question. The labels come from `data-label`,
+   set beside the cell in setupCard so the two can never drift apart. */
+@media (max-width:600px){
+  .rtable, .rtable tbody, .rtable tr, .rtable td{display:block; width:auto}
+  .rtable thead{display:none}
+  .rtable tr{
+    border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; margin-bottom:8px; background:var(--raised);
+  }
+  .rtable tr:last-child{margin-bottom:0}
+  .rtable td{border-bottom:0; padding:2px 0}
+  .rwho{font-size:14.5px; margin-bottom:3px}
+  .rtable td[data-label]::before{
+    content:attr(data-label) " ";
+    font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--faint); margin-right:6px;
+  }
+  /* a question this run has no opinion on says nothing worth a line of its own */
+  .rtable td.rnone{display:none}
+}
+/* Hover is the one thing a phone does not have, and the tooltip on a cap is the
+   only place the plan says *why* she may go no higher. Below the stacking
+   breakpoint it becomes a line of text instead. */
+.rwhy{display:none}
+@media (max-width:600px){
+  .rwhy{display:block; font-size:11.5px; font-style:italic; color:var(--faint); margin-top:1px}
+}
+
+/* ---- give back the width fixed padding was spending ---- */
+@media (max-width:600px){
+  .masthead{padding:14px 14px 12px; gap:10px}
+  .masthead h1{font-size:21px}
+  .masthead p{font-size:13px}
+  .card{padding:13px 12px; margin-top:12px}
+  .itin{padding:6px; gap:10px}
+  .actcell{padding:8px 10px}
+  .dayband{padding:9px 11px 8px}
+  /* "5 free slots — nothing to do" beside a day name is wider than a 320px
+     phone once the rule between them claims its 12px. Let the meta wrap, let the
+     rule collapse, and drop it entirely from a fold heading — there the meta
+     reads as the rest of the sentence the day name starts. */
+  .dayband{flex-wrap:wrap; gap:4px 10px}
+  .dayband .drule{min-width:0}
+  .dayfold .drule{display:none}
+  .daymeta{white-space:normal}
+  .gap{padding:8px 11px}
+  .recipe{margin-left:6px}
+  .foot{padding:14px 0 0}
+  .plan-head h2{font-size:22px}
+}
+
+/* ---- touch ----
+   Coarse-pointer targets, not narrow ones: a phone in landscape is still a
+   phone. 40px is the smallest of these once padding and line-height are added. */
+@media (pointer:coarse){
+  .who{padding:10px 9px}
+  .kind{padding:10px 4px}
+  .item{padding:11px 10px}
+  .rbtn{padding:8px 13px}
+  .gap{padding:11px 14px 11px 11px}
+  .avoidmore{padding:4px 11px}
+  /* 16px stops Samsung Internet and Chrome from ever zooming the field on focus */
+  .search{font-size:16px; padding:10px}
+}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<header class="masthead">
+  <div>
+    <h1>Cabin Loop <span>Atlas</span></h1>
+    <p>Pick a girl and something you want unlocked. This tells you which corruptions to switch on before the run, and the exact decisions to make.</p>
+  </div>
+  <span class="tag" id="tag">loading</span>
+</header>
+
+<div class="shell">
+  <aside class="rail">
+    <div>
+      <div class="eyebrow">Who</div>
+      <div class="roster" id="roster"></div>
+    </div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:6px">What to unlock</div>
+      <input class="search" id="search" type="search" placeholder="Filter by name or hint…" aria-label="Filter unlockables by name or in-game hint">
+      <div class="kinds" id="kinds"></div>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <main class="plan" id="plan"></main>
+</div>
+
