@@ -18,7 +18,9 @@
 #
 # The sweep renders 90 targets (the three biggest plans per character per kind,
 # so the sessions, the long avoid rows and the fullest setup rosters are all in
-# it) plus the empty state, and unions the findings.
+# it), plus the seven widest reward pages -- those have no plan at all, so the
+# ranking above cannot reach them -- plus the empty state, and unions the
+# findings.
 
 import os, re, subprocess, sys, html
 
@@ -67,7 +69,17 @@ function run(){
     seen[k] = (seen[k]||0) + 1;
     if (seen[k] <= 3) pick.push(t);
   });
-  pick.slice(0, 90).forEach(function(t){
+  pick = pick.slice(0, 90);
+  /* A replay tile whose whole condition is corruption rungs has no plan at all,
+     so the sweep above never reaches it -- and the widest thing either new tab
+     draws is exactly that page: Sami's "All Tied Up" is five cross-link buttons
+     on one row. Add the most-linked tiles and one that needs nothing. */
+  DATA.targets.filter(function(t){ return t.requires && t.requires.length; })
+    .sort(function(a,b){ return b.requires.length - a.requires.length; })
+    .slice(0, 6).forEach(function(t){ pick.push(t); });
+  var free = DATA.targets.filter(function(t){ return t.available; })[0];
+  if (free) pick.push(free);
+  pick.forEach(function(t){
     state.who = t.char; state.kind = t.kind; state.id = t.id;
     render(); scan(t.char + "/" + t.kind);
   });

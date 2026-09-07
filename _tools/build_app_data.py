@@ -5,6 +5,9 @@ from collections import defaultdict, Counter
 G = json.load(open("_analysis/graph.json", encoding="utf-8"))
 L = json.load(open("_analysis/ladders.json", encoding="utf-8"))
 M = json.load(open("_analysis/mails.json", encoding="utf-8"))
+# The Memories/Dreams galleries. Extracted by `rewards.py`, which must therefore
+# run before anything imports this module.
+R = json.load(open("_analysis/rewards.json", encoding="utf-8"))
 
 ROOTS, EV, EDGES = G["roots"], G["events"], G["edges"]
 RBR, NAMES = G["routesByRoot"], G["sceneNames"]
@@ -1189,26 +1192,63 @@ def build_targets():
             t.update(record.get((ch, r["name"]), {}))
             targets.append(t)
 
+    # The Memories and Dreams galleries. A reward is not a scene you visit -- all
+    # 80 have zero routes from any root -- so the target is a *prerequisite*
+    # plan, anchored on `endCyclePhone`. That anchor is right twice over: the
+    # panel really is drawn at the end-of-loop menu, and `<char>Love` resets each
+    # loop, so a `Love >= 6` gate has to be met by the end of the very run whose
+    # phone you are checking. dateVar 22 is exactly that deadline.
+    #
+    # The corruption rungs the tile wants are NOT handed to the planner: they
+    # cross-link to their own `cor:<var>` targets. `not alexCorruption5` is a
+    # positive requirement (the unlock vars are inverted), and minting a fact for
+    # that shape would change every one of the game's other guards too. See
+    # `rewards.split_cond`.
+    for r in R:
+        evs = []
+        if r["residue"]:
+            evs = [{"type": "reward", "owner": "endCyclePhone",
+                    "guards": [{"kind": "cond", "text": r["residue"],
+                                "file": r["file"], "line": r["line"]}],
+                    "file": r["file"], "line": r["line"]}]
+        targets.append({
+            "id": r["id"], "kind": "memory" if r["section"] == "memory" else "dream",
+            "char": r["char"], "name": r["name"], "section": r["section"],
+            "scene": r["scene"], "hint": r["hint"], "cond": r["cond"],
+            "requires": r["requires"],
+            "available": not r["requires"] and not r["residue"],
+            "routes": routes_for(evs), "_events": evs})
+
     ORDER = ["Corruption1", "CorruptionPrey", "CorruptionPred", "Corruption2",
              "Corruption3", "Corruption4", "Corruption4M", "Corruption4D",
              "Corruption5", "CorruptionNote", "CorruptionAlex", "CorruptionPast1",
              "CorruptionGym", "CorruptionSpy", "CorruptionMoonstone", "CorruptionPreg"]
     # mails list in the order the phone's Mail panel draws them
     MAILPOS = {"mail:" + r["var"]: i for ch in M for i, r in enumerate(M[ch])}
+    # rewards list in the order their own section of the panel draws them
+    REWPOS, _seen = {}, Counter()
+    for r in R:
+        REWPOS[r["id"]] = _seen[(r["char"], r["section"])]
+        _seen[(r["char"], r["section"])] += 1
     for t in targets:
         if t["kind"] == "corruption":
             sfx = re.sub(r'^[a-z]+', "", t["var"])
             t["order"] = ORDER.index(sfx) if sfx in ORDER else 99
         elif t["kind"] == "mail":
             t["order"] = MAILPOS[t["id"]]
+        elif t["kind"] in ("memory", "dream"):
+            t["order"] = REWPOS[t["id"]]
         else:
             t["order"] = t.get("tier", 0)
 
     # A ladder rung or a mail with no route is content the game never wires up,
     # and there is nothing to say about it. A dot is different: the checklist
     # draws it whether or not it can be earned, so hiding one makes the tab
-    # disagree with the panel the player is looking at.
-    targets = [t for t in targets if t["routes"] or t["kind"] == "unlock"]
+    # disagree with the panel the player is looking at. A Memory or Dream is the
+    # same case again, and more so: a tile with nothing to earn is *available
+    # now*, which is the most useful thing the tab can say about it.
+    KEEP = {"unlock", "memory", "dream"}
+    targets = [t for t in targets if t["routes"] or t["kind"] in KEEP]
 
     colors = {}
     for line in open("_decompiled/characters.rpy", encoding="utf-8"):

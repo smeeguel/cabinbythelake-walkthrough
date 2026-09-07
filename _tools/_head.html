@@ -131,10 +131,15 @@ button{font:inherit; color:inherit}
   border:1px solid var(--line); color:var(--ink); font-size:13.5px;
 }
 .search::placeholder{color:var(--faint)}
-.kinds{display:flex; gap:4px; margin-top:8px}
+/* Five tabs, not three. `flex:1 1 0` divides a ~260px rail into ~48px each,
+   which clips "Corruption" at 12px/600 -- so the row wraps instead, and the
+   basis is `auto` so a wrapped line sizes to its own content rather than
+   stretching two buttons across the rail. */
+.kinds{display:flex; flex-wrap:wrap; gap:4px; margin-top:8px}
 .kind{
-  flex:1 1 0; min-width:0; padding:6px 4px; font-size:12px; font-weight:600; cursor:pointer;
+  flex:1 1 auto; min-width:0; padding:6px 7px; font-size:12px; font-weight:600; cursor:pointer;
   background:var(--surface); border:1px solid var(--line); border-radius:7px;
+  white-space:nowrap;
 }
 .kind[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
 .kind .n{font-variant-numeric:tabular-nums; color:var(--faint); font-weight:500}
@@ -164,6 +169,9 @@ button{font:inherit; color:inherit}
   font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint);
   border:1px solid var(--line); border-radius:4px; padding:1px 4px; flex:none;
 }
+/* A replay tile that is open on any save. Quiet on purpose -- it is the absence
+   of work, not a reward category, so it borrows the ON green and nothing else. */
+.rung.ready{color:var(--on); border-color:var(--on)}
 .swatch{width:4px; align-self:stretch; border-radius:2px; flex:none}
 .empty{color:var(--faint); font-size:13px; padding:14px 10px; font-style:italic}
 
@@ -283,6 +291,22 @@ button{font:inherit; color:inherit}
 /* "no opinion" has to look like an answer, not like a missing cell */
 .rnone{color:var(--faint)}
 .rtable .toggle.mod{margin:1px 5px 1px 0; padding:3px 7px 3px 9px}
+/* Cross-links to the corruption rungs a replay tile is gated on. Each is another
+   target with its own weekend, so the row is a button, not a pill -- it has to
+   look like something you press. No new colour: the girl's roster dot carries
+   the identity, the way it does in the setup table. */
+.links{display:flex; flex-direction:column; gap:6px}
+.linkrow{display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.either{font-size:11px; font-style:italic; color:var(--faint)}
+.xlink{
+  display:inline-flex; align-items:center; gap:7px; padding:6px 10px; cursor:pointer;
+  border-radius:7px; border:1px solid var(--line); background:var(--raised);
+  font-size:13px; color:var(--ink); text-align:left; min-width:0;
+}
+.xlink:hover{border-color:var(--accent); background:var(--accent-wash)}
+.xlink b{font-weight:700}
+.xlink .dot{flex:none}
+.xlink .rung{margin-left:2px}
 .reqline{font-size:13.5px; color:var(--ink-2)}
 .recipe{margin:5px 0 12px 14px; border-left:2px solid var(--line); padding-left:10px}
 .recipe-row{font-size:12.5px; color:var(--muted); font-family:"IBM Plex Mono",monospace}

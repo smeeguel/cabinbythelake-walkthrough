@@ -1,10 +1,11 @@
 # Cabin Loop Atlas — working notes
 
 A walkthrough generator for **Cabin by the Lake 0.62d** (Ren'Py, by Nunu). Pick a
-character and something you want unlocked (a corruption level, a mail, or any of
-the 497 collection dots, grouped as the end-of-loop checklist groups them);
-get back the corruption toggles to set at the end-of-loop menu and a full
-timeslot-by-timeslot itinerary of the exact choices to make.
+character and something you want unlocked (a corruption level, a mail, any of
+the 497 collection dots grouped as the end-of-loop checklist groups them, or any
+of the 80 Memory/Dream replay tiles); get back the corruption toggles to set at
+the end-of-loop menu and a full timeslot-by-timeslot itinerary of the exact
+choices to make.
 
 Everything is derived by decompiling the shipped `.rpyc` bytecode and statically
 analysing it. Nothing is hand-authored, so a new game version is a re-run, not a
@@ -22,7 +23,8 @@ you are in a different conversation.
 _game/                 the whole Ren'Py install (input, never modified)
 _game/game/            the .rpyc files everything is derived from
 _decompiled/           generated .rpy pseudo-source (145 files, ~238k lines)
-_analysis/             generated JSON: graph.json, ladders.json, mails.json, app_data.json
+_analysis/             generated JSON: graph.json, ladders.json, mails.json,
+                       rewards.json, app_data.json
 _tools/                the pipeline (below)
 index.html             the shippable single-file app (generated)
 walkthrough.html       the same app as an Artifact fragment (generated)
@@ -71,6 +73,7 @@ python _tools/rpyc_dump.py _game/game _decompiled   # 1. decompile -> _decompile
 python _tools/graph.py                        # 2. scene graph -> _analysis/graph.json
 python _tools/ladders.py                      # 3. ladders     -> _analysis/ladders.json
 python _tools/mails.py                        # 4. mails       -> _analysis/mails.json
+python _tools/rewards.py                      # 4b. rewards    -> _analysis/rewards.json
 PYTHONPATH=_tools python _tools/build_all.py  # 5. plans       -> _analysis/app_data.json
 python _tools/make_template.py                # 6. assemble    -> _tools/template.html
 python _tools/make_app.py                     # 7. inline data -> index.html + walkthrough.html
@@ -82,6 +85,8 @@ python _tools/probe.py                        # 10. verify     -> "0 findings" x
 Step 5 needs `PYTHONPATH=_tools` because `build_all` imports `build_app_data`
 and `plan` as modules. Steps 6–7 are independent of 1–5; if you only touched the
 UI, run 6, 7, 8, 10. Step 9 reads `app_data.json`, so it only needs 1–5.
+Step 4b must run **before** step 5: `build_app_data` loads `rewards.json` at
+import time, beside `mails.json`.
 
 ### The tools
 
@@ -92,15 +97,16 @@ UI, run 6, 7, 8, 10. Step 9 reads `app_data.json`, so it only needs 1–5.
 | `analyze.py` | Older exploratory extractor. Only `context_chain` is still used (by `ladders.py`). Safe to keep as a scratch tool. |
 | `ladders.py` | Extracts each character's corruption ladder (var → display name) and unlock sites |
 | `mails.py` | Extracts the phone mail catalogue: `<Char>SMS<n>` → name, variant, in-game hint, grant sites |
+| `rewards.py` | Extracts the phone's Memories and Dreams galleries: 80 replay tiles → name, hint, unlock condition, split into corruption cross-links and a plannable residue |
 | `build_app_data.py` | Shared vocabulary: scene names, branch names, condition prettifying, boolean flattening, requirement parsing. Also `build_targets()`. |
 | `plan.py` | The planner: backward chaining + slot scheduling |
 | `build_all.py` | Driver: targets × planner → `app_data.json` |
 | `make_template.py` | `_head.html` + `_app.js` → `template.html` |
 | `make_app.py` | `template.html` + `app_data.json` → `walkthrough.html` (the Artifact fragment), and the same bytes wrapped in a real document as `index.html` |
-| `smoke.js` | Renders every target through the real app JS in a DOM shim; catches runtime errors |
+| `smoke.js` | Drives the real app JS in a DOM shim: `renderPlan` for every target, then the whole rail (`render`/`visible`/`renderList`/`itemBtn`) for every character × tab. Catches runtime errors |
 | `probe.py` | Layout check: sweeps 90 targets at seven viewport widths and reports every box wider than the screen. See **Phones** |
 | `verify_sessions.py` | Replays every shipped trance path against the raw `.rpy`, with its own parser. See landmine 55 |
-| `preview.js` | `node _tools/preview.js <Who> <kind> <id>` → `_analysis/preview.html` pre-selected, for screenshots |
+| `preview.js` | `node _tools/preview.js <Who> <kind> <id>` → `_analysis/preview.html` pre-selected, for screenshots. Reads `index.html`, not the fragment — a doctype-less page screenshots in quirks mode |
 
 **Edit `_head.html` (markup + CSS) and `_app.js` (logic). Never edit
 `template.html`** — `make_template.py` overwrites it.
@@ -328,6 +334,55 @@ string `totalCorruption` does not hold, and its mail is left unbadged. That
 leaves 99 of the 173 mails badged, so a mail with no badge means "no record
 says", not "no requirement".
 
+### Memories and Dreams — the replay galleries
+
+The phone's end-of-loop panel draws **five** collections, not three: Corruption,
+Mail, Events, and the two galleries of replay tiles. They are **not** a third and
+fourth copy of the Mail system, and the difference decides the whole design:
+
+- **No per-item boolean.** Mail is 175 `default <Char>SMS<n> = False`
+  declarations. A Memory or Dream has none — its identity is the
+  `Jump("<label>")` on its thumbnail.
+- **No grant site, no `PushToLog`, no end-of-run sweep, no cheat layer.** A tile
+  is unlocked when a *condition* holds, evaluated live as the panel draws.
+- **Not reachable in a run.** All 80 scenes exist as containers and have **zero
+  routes from any of the 39 roots**. They are replay tiles, not scenes you visit
+  during a weekend.
+
+So a tile's "plan" is a **prerequisite plan**, not an itinerary to the scene.
+
+Both are inline sections of the `elif endmenuchascreen == "rewards":` branch of
+each `screen endmenu<Char>`, one screen below the `use mail<Char>` call
+`mails.py` parses. Section headings are a uniform literal —
+`Text " Memories " size 18 at truecenter`, likewise `" Dreams "` — and **position
+between those two headings is what says which gallery a tile is in**. That also
+excludes the Mail panel Cassidy, Lin and Lisa fold into the same screen, which
+sits above the Memories heading.
+
+**40 Memories + 40 Dreams across 9 characters.** Per character (Mem/Dream):
+Alex 3/6, Carla 6/2, Cassidy 4/5, Haily 7/4, Jenny 5/6, Lin 5/4, Lina 2/3,
+Lisa 3/4, Sami 5/6.
+
+Every distinct guard across all 80 falls into six families, and the planner
+already models five of them:
+
+| Guard shape | Fact | Treatment |
+|---|---|---|
+| `not <char>CorruptionN` (22 rungs) | — | **cross-link** to the existing `cor:<var>` target |
+| `tempFlags["id"] >= 2` | `("branch", id)` | real itinerary |
+| `<char>Love >= 6` | `("stat", var, 6)` | run-scoped gate, `chase_gate` earns it |
+| `optionPreg` / `optionPegging` | `("option", …)` | setup card; both `default True` |
+| `worldCorruption >= 80/100` | `("world", n)` | `setup_world`, reported |
+| `csv` | `("flag","csv")` | granted at `sceneC4Cassidy.rpy:2581` |
+| `True` / absent (24 tiles) | — | already available |
+
+`endCyclePhone` is the plan's anchor, and it is right twice over: the panel
+really is drawn at the end-of-loop menu, and `<char>Love` resets every loop, so a
+`Love >= 6` gate must be met **by the end of the very run whose phone you are
+checking**. dateVar 22 is exactly that deadline. The plans therefore end on a
+step reading only "Checking your phone", the same shape mails granted by the
+end-of-run sweep already produce.
+
 ### Sessions — the hypnosis scenes
 
 Three scenes are built the same way and nothing else in the game is:
@@ -541,6 +596,39 @@ never routed *through*, only entered.
 
 Corruption rung names and the sites that unlock them.
 
+### 3b. Rewards (`rewards.py`)
+
+The Memories/Dreams panel walk, and the condition splitter that keeps the blast
+radius at zero.
+
+A **tile** is the minimal subtree holding both a `Jump(...)` and a
+`Text "..." size 14` caption. Anchoring on the box instead loses four of the
+eighty — see landmine 72. Within a tile:
+
+- the **name** is the caption in the *unlocked* branch, never the `???` else;
+- the **condition** is the positive guard stack down to that caption, which is
+  the outer `if` wrapping the tile conjoined with the inner one on the
+  imagebutton (several tiles have both);
+- the **hint** is the `Tip=` on the padlock button — the author's own words;
+- the **identity** is `(char, section, jump target)`, deduped per tile.
+
+`split_cond` then divides the condition in two, and **this split is the whole
+design**. `not alexCorruption5` is a *positive* requirement — the game's
+corruption unlock vars are inverted, so `False` means unlocked. The obvious
+implementation is to teach `atom_facts` an `("unlocked", var)` fact, and it is
+the wrong one: that shape appears in scene guards throughout the game, so
+minting a fact for it would change every one of the 732 pre-existing plans. So:
+
+- conjuncts matching the unlock shape → `requires`, cross-links the planner
+  never sees;
+- the residue → a synthetic `{"type":"reward","owner":"endCyclePhone"}` event
+  whose guards the planner reads like any other site's.
+
+The planner therefore only ever sees conditions it already understands. No
+change to `atom_facts`, `resolve`, `fact_cost`, `describe` or `atom_ok`, and the
+732 existing plans stay **byte-identical** — which is the regression tripwire
+(see landmine 73).
+
 ### 4. Vocabulary (`build_app_data.py`)
 
 Shared helpers used by the planner. The important ones:
@@ -733,8 +821,12 @@ colours. Hovering a cap or an OFF modifier names the scene and slot that demand
 it, and any other way round the run could have taken. See landmines 66-68 and
 70; landmine 71 is why a clashing `avoid` pill is marked on the row as well.
 
-Three tabs: **Corruption** (the ladder rungs), **Mail** (the phone catalogue) and
-**Events** (the dots — every `totalCorruption` record). Events is the big one,
+Five tabs, matching the five collections the phone actually draws:
+**Corruption** (the ladder rungs), **Mail** (the phone catalogue), **Events**
+(the dots — every `totalCorruption` record), **Memories** and **Dreams** (the 80
+replay tiles). The rail is only ~260px wide, so `.kinds` wraps
+(`flex-wrap:wrap`, `.kind{flex:1 1 auto}`) rather than dividing into ~48px
+buttons that clip "Corruption". Events is the big one,
 497 rows against Jenny's 78, so it is not a flat list: it is grouped the way the
 end-of-loop checklist the player is holding is grouped, **corruption row, then
 scene**. `groupEvents()` walks the sorted list and emits a `.grp` heading per
@@ -755,6 +847,26 @@ pair they will check it off by. `sceneName` is in the search haystack too.
 
 Lun is on the roster. She is not one of the girls — `addCor` gives her no mini
 icon — but she owns one lore dot ("Circles"), and leaving her off hides it.
+
+A Memory or Dream page is a different shape from every other target, because
+what it needs is not always a weekend. Above the setup card sits
+**`requiresCard`**: one clickable row per corruption rung the tile is gated on,
+jumping to that rung's own Corruption-tab plan. It sets `state.who` as well as
+`state.kind`/`state.id`, because `forWho()` filters by character and the rung
+often belongs to a different girl — Lin's "Practice Date" wants *Carla's*
+Corruption 4. An OR group renders as "either … or": Jenny's Maiden and Devourer
+are alternative tops of one ladder. Five links stacked (Sami's "All Tied Up") is
+five separate runs, and inlining five weekend itineraries whose setup cards
+contradict each other would say nothing true — one target still means one run.
+The card's lead says outright that **unlocking is not switching on**, or a page
+reading "unlock Carla · Pregnant" above a setup row reading "Pregnant OFF" looks
+like it contradicts itself when it does not (landmine 68's distinction again).
+The 46 tiles with no residue have no plan and end on a one-line verdict:
+"Available now" for the 24 that are ungated, "unlock the corruptions above" for
+the rest. Where the author's `Tip=` disagrees with the guard — Jenny's dreams
+are ungated but hinted "Corruption 4" — the guard governs and the hint is shown
+as the author's stale note, marked as such. Same precedent as landmine 59: the
+tab must agree with the panel the player is holding.
 
 A step with `explore` set is rendered differently, because it is a different kind
 of instruction — a mode you switch the map into, not a scene you click. It gets
@@ -1392,6 +1504,47 @@ Every one of these was a real bug. They will recur if the code is rewritten.
     before they can even see the contradiction. `clash` marks those entries and
     `avoidRow` sorts them first, so one is never the pill hidden behind the
     "+3". 23 steps carry one.
+72. **A reward tile is identified by its jump, not by its box.** 76 of the
+    panel's `MultiBox ... xsize 240 ysize mailYSize` boxes exist and there are
+    **80** tiles: Cassidy's four use different markup, and one of the 76 is the
+    legacy panel's stray `TheProgression`. Anchoring the extractor on the box
+    silently loses four Memories and Dreams, and the counts still look plausible.
+    What every tile does have is a thumbnail that jumps and a caption under it,
+    so `tiles()` takes the **minimal subtree holding both a `Jump` and a
+    `Text "..." size 14`**. Minimal is the load-bearing word — every ancestor
+    holds both too, so without it the enclosing `vpgrid` comes back as one tile
+    covering the whole section.
+73. **`not <char>CorruptionN` is a positive requirement, and teaching the
+    planner that would rewrite every plan in the build.** The corruption unlock
+    vars are inverted (`False` = unlocked), so the reward tiles are full of
+    `not alexCorruption5` meaning "Alex's Corruption 5 is unlocked". Minting an
+    `("unlocked", var)` fact for it in `atom_facts` is the obvious move and it is
+    wrong: that shape appears in scene guards all over the game, so the fact
+    would land in all 732 pre-existing targets and move every tripwire in
+    `build_all`'s summary at once. Split the condition at extraction time
+    instead (`rewards.split_cond`) — rungs become cross-links the planner never
+    sees, residue becomes a synthetic event's guards. **The regression check is
+    that the 732 non-reward targets are byte-identical**; diff `app_data.json`
+    restricted to their ids before and after any change here. Landmine 70's trap
+    applies to the matcher: match the token, *then* check for the `On` suffix —
+    a `(?!On)` lookahead sits past the whole token and happily eats
+    `alexCorruption5On`.
+74. **One tile can jump to the same scene twice.** Carla's `CarlaSamiMovieNight`
+    is an `if optionPreg`/`else` pair differing only in artwork
+    (`sceneEndChoicesCarla.rpy:137` and `:142`). Identity is
+    (char, section, jump target), so the second is the same tile — dedupe per
+    tile or Carla's Memories come out 7 instead of 6, and the total 81 instead
+    of 80. Take the condition from the **caption**, not from the button: the
+    caption cell has one canonical guard where the button's is forked by
+    artwork.
+75. **A verifier that drives only the plan will pass a tab that crashes the
+    rail.** `smoke.js` rendered every target through `renderPlan` and nothing
+    else, so a new kind that broke `visible()`, `renderList()` or `itemBtn()`
+    would still print `failures: 0`. It now also drives `render()` for every
+    (character, tab) pair — 50 of them, including the empty ones — and the DOM
+    shim's `querySelectorAll` returns real matching descendants rather than `[]`,
+    because `renderKinds()` reads `.n` off each tab and a shim that returns
+    `null` there means the counts are never exercised at all.
 69. **A loose end is a worse answer than a toggle clash, so weigh it first.**
     `build_plan` scored `len(conflicts) + len(unresolved)`, which is a tie no
     longer worth taking once landmine 65 makes the real contradictions visible:
@@ -1439,14 +1592,26 @@ Every one of these was a real bug. They will recur if the code is rewritten.
    Mail panel's markup changed; `NO GRANT SITE` beyond `LinaSMS28`/`LinSMS0`
    means a new way of awarding mail. Cross-check the per-character counts against
    the game's own Mail panel — that is how the 0.62d undercount was found.
-8. Watch `build_all.py`'s summary. It should read **732 targets, 723 with a
-   plan, 711 fully resolved** for 0.62d, and `build_app_data.py` before it
-   **732 targets: 497 unlock, 173 mail, 62 corruption**. The 497 is the size of
+7b. Check `rewards.py`'s summary. It must print **40 memories, 40 dreams,
+   9 characters**, with no `ANOMALIES` block, and the per-character counts
+   Alex 3/6, Carla 6/2, Cassidy 4/5, Haily 7/4, Jenny 5/6, Lin 5/4, Lina 2/3,
+   Lisa 3/4, Sami 5/6. Cross-check two things against the panel itself: Carla
+   must be 6 Memories, not 7 (the `CarlaSamiMovieNight` double-jump, landmine
+   74), and `TheProgression` — the legacy panel's stray tile — must be absent.
+   `cross-linked rungs: 22` and every one of them present in `ladders.json` is
+   what makes the cross-links exact; a rung that is not there would render as a
+   dead link. An `ANOMALIES` line naming a tile with no caption or two jump
+   targets means the panel's markup changed — read the tile before trusting the
+   record.
+8. Watch `build_all.py`'s summary. It should read **812 targets, 757 with a
+   plan, 744 fully resolved** for 0.62d, and `build_app_data.py` before it
+   **812 targets: 497 unlock, 173 mail, 62 corruption, 40 memory, 40 dream**.
+   The 497 is the size of
    the `totalCorruption` catalogue and must match
    `grep -ho 'totalCorruption\.add("[^"]*"' _decompiled/*.rpy | sort -u | wc -l`;
    a drop means `read_catalog` stopped seeing a file, and the Events tab is then
    quietly incomplete. Big drops in "fully resolved" mean a new
-   condition shape is not being parsed. **"toggle clashes" is 36 in 0.62d** — a
+   condition shape is not being parsed. **"toggle clashes" is 37 in 0.62d** — a
    rise means plans are contradicting their own setup, which is nearly always a
    bug rather than new content. It was 12 before landmine 65 taught `escapes()`
    to see a jump that is not the block's last statement; the 26 it added are
@@ -1454,13 +1619,25 @@ Every one of these was a real bug. They will recur if the code is rewritten.
    the old number. **"setup roster" must always print 0 contradictions** —
    a ceiling that names a rung the same card switches on is the card
    contradicting itself (landmines 66-68). **"run-scoped not covered" is 18 of
-   180 in 0.62d**; a jump means candidates are being rejected as unreachable,
+   189 in 0.62d**; a jump means candidates are being rejected as unreachable,
    usually a genuine change in the map gates — but check
    `CHASE_TRIES`/`CHASE_ROUNDS` first, since those budgets are what the number
    is most sensitive to (landmine 60).
    The structural counts in step 4 are **not** affected by any of this: guards
    move, nothing else does. If containers, edges, events, roots or the three
    naming counts shift when only `escapes()` has changed, something else broke.
+   **And the 732 non-reward targets must stay byte-identical whenever only the
+   reward path has changed** (landmine 73). Keep a copy of the previous
+   `app_data.json` and count the rows that moved — it must be 0:
+
+   ```python
+   import json
+   a = {t["id"]: t for t in json.load(open("old.json"))["targets"]}
+   b = {t["id"]: t for t in json.load(open("_analysis/app_data.json"))["targets"]
+        if t["kind"] not in ("memory", "dream")}
+   d = lambda t: json.dumps(t, sort_keys=True)
+   print(sum(1 for k in a if d(a[k]) != d(b[k])))
+   ```
 9. Check the sessions still extract, and that only the right ones do:
    `PYTHONPATH=_tools python -c "import build_app_data as B; print({k: (v['vars'],
    len(v['menus']), len(v['mods'])) for k, v in B.SESSION.items()})"` must print
@@ -1468,7 +1645,10 @@ Every one of these was a real bug. They will recur if the code is rewritten.
    carrying 3 multipliers and the other two 1 apiece. A fourth entry means the
    author wrote another scene of this shape — check it is really flat (landmine
    55) before trusting it. `SESSION_CHAR` must still read `hypnosisB` as Lina's.
-10. `node _tools/smoke.js` must report `failures: 0`.
+10. `node _tools/smoke.js` must report `failures: 0`, and also
+    `rails ok: 50 rows: 812` — 10 characters × 5 tabs, and every target appearing
+    in exactly one list. A tab that crashes the rail passes the plan loop alone
+    (landmine 75), so the rail line is the half that catches a new kind.
 11. Replay every shipped trance path against the raw source. The pipeline
     agreeing with itself proves nothing; a separately-written parser of the
     `.rpy` is what caught the three near-miss scenes. `_tools/verify_sessions.py`
@@ -1481,36 +1661,47 @@ Every one of these was a real bug. They will recur if the code is rewritten.
 ## Current state (0.62d)
 
 - 145/145 script files decompile
-- 732 targets: 62 corruption levels, 173 mails, 497 events. The events are the
-  whole `totalCorruption` catalogue, one row per dot — 102 of them `New Mail:`
-  records, which are dots the game draws beside the letter and so belong here
-  as well as folding onto the Mail tab.
-- 723 have a plan; **711 fully resolved**, 12 with a reported loose end. Nine
-  have none at all: six records the game spells differently at the checklist and
+- 812 targets: 62 corruption levels, 173 mails, 497 events, 40 Memories,
+  40 Dreams. The events are the whole `totalCorruption` catalogue, one row per
+  dot — 102 of them `New Mail:` records, which are dots the game draws beside
+  the letter and so belong here as well as folding onto the Mail tab.
+- 757 have a plan; **744 fully resolved**, 13 with a reported loose end. 55 have
+  none at all, and 46 of those are reward tiles that need no run: 24 are
+  available on any save and 22 want only corruption rungs, which cross-link. Of
+  the other nine: six records the game spells differently at the checklist and
   at the grant, so nothing can light them; Alex "First Grope", whose only sites
   are the first-loop-only `d2nightDefault`/`d3nightDefault`, the "skip the first
   loop" button and the cheat menu; and Lina "Hottub Sex" and "Failed Makeout",
   because every itinerary for them wanted two scenes in one slot.
-- 52 need at least one earlier loop
-- 341 free steps, and 6 that cost two sittings. 60 plans put two scenes in one
+- **The 732 non-reward targets are byte-identical to the build before Memories
+  and Dreams were added.** That is the point of the condition splitter, and the
+  check to run after any change to it (landmine 73).
+- 53 need at least one earlier loop
+- 358 free steps, and 6 that cost two sittings. 55 plans put two scenes in one
   slot, which is legal only because the first of them costs nothing — it is
   either automatic or an Explore trip that hands the sitting back.
-  (Counts are over `plan.steps`; adding `plan.prior` gives 401 free steps out
-  of 1899, 319 of them automatic events.)
+  (Counts are over `plan.steps`; adding `plan.prior` gives 420 free steps out
+  of 1974, 338 of them automatic events.)
+- **80 replay tiles across two new tabs**, 40 Memories and 40 Dreams. 24 are
+  available on any save past the first loop; 22 are gated purely on corruption
+  rungs and cross-link to those rungs' own plans; 34 carry a real itinerary. 22
+  distinct rungs are cross-linked, and all 22 resolve to an existing `cor:<var>`
+  target with a plan behind it. The only guard families are the six in
+  **Memories and Dreams** above — nothing in the panel needed a new fact.
 - 76 Explore steps, 62 of them free. The 14 that are not take a room option that
   jumps out instead of returning to the room's menu. Every one of the 88 Explore
   steps in the file (`steps` + `prior`) names the room it is in.
-- **713 plans carry a setup roster** — a table with a row per girl the run has
-  anything to say about, replacing the old ON-only pill list. 2212 rows: 1392
-  name a ladder position to switch on, 770 cap how far it may go (100 of those
+- **731 plans carry a setup roster** — a table with a row per girl the run has
+  anything to say about, replacing the old ON-only pill list. 2271 rows: 1432
+  name a ladder position to switch on, 784 cap how far it may go (101 of those
   at "Uncorrupted", 31 forking two ways because Jenny's Maiden and Devourer are
-  alternative tops), and 910 modifier pills — 376 ON (Package, Fertile), 534 OFF
+  alternative tops), and 936 modifier pills — 389 ON (Package, Fertile), 547 OFF
   (Pregnant, Prey). Zero contradict themselves, and `build_all` prints that as a
   must-be-zero tripwire (landmines 66-68).
 - 23 steps carry an `avoid` entry the run's own setup contradicts. Each is also
   a toggle clash in the warn card; the row marks it so the reader does not have
   to apply the cascade themselves to notice (landmine 71).
-- 36 toggle clashes, all reported in the app: the best available site for these
+- 37 toggle clashes, all reported in the app: the best available site for these
   still needs a rung switched the other way from what the run requires. Six are
   variants of one thing - "Moisturizing Alex" is the Corruption 2-3 bedroom
   scene, and those runs need Alex higher for something else. Lina "Open" is the
@@ -1520,22 +1711,24 @@ Every one of these was a real bug. They will recur if the code is rewritten.
   regression: 126 edges and 352 events gained a fall-through guard that had
   never been recorded, and contradictions that were silently violated are now
   named. Do not read a future rise the same way without checking that first.
-- 214 affection gates (180 run-scoped, 22 slot-scoped Horny, 12 meta Nerve);
+  The 37th is Lin's "Milk on Tap" Memory, the only reward tile that carries one;
+  the other 36 are the pre-existing set, unchanged.
+- 223 affection gates (189 run-scoped, 22 slot-scoped Horny, 12 meta Nerve);
   18 run-scoped ones the planner cannot fully cover, most of those short by a
   single point
 - nearly all of the affection is now earned by `chase_gate`, as real visits with
   their own prerequisites; only 20 steps are spare-slot top-up. 365 steps pay
   more than one tally, and the row names all of them
-- 44 trance blocks across 38 targets, every one solved to four named picks and
+- 45 trance blocks across 39 targets, every one solved to four named picks and
   independently replayed against the raw `.rpy` (landmines 54-56). They used to
   be 33 unexplained "score at least N" notes at the bottom of the page.
-- 163 plans carry an "Also required" note — a counter outside the fact model.
+- 169 plans carry an "Also required" note — a counter outside the fact model.
   These used to be dropped silently, which made plans read as complete when they
-  were not. A handful of the 241 notes spell the counter out as a scene score;
+  were not. A handful of the 247 notes spell the counter out as a scene score;
   three of those are the Sunday search's contest and carry the whole clue menu
-  with them (landmine 51). 132 steps warn on the row itself that their way in
+  with them (landmine 51). 137 steps warn on the row itself that their way in
   turns on one of these (landmine 53).
-- 2294 "must not already have" lines across the 1899 steps. Half of them are the
+- 2347 "must not already have" lines across the 1974 steps. Half of them are the
   route's own `elif` negations, which used to be dropped (landmine 49). The
   count fell from 2812 because `negatives` now goes through `atom_ok` the way
   `nav_negatives` always did: once a scene's own fall-through negations are
@@ -1550,7 +1743,7 @@ Every one of these was a real bug. They will recur if the code is rewritten.
   out at the reset rather than in a scene — Lisa's The Note hands every run the
   altered suitcase clue, Alex's Past 1 her old photos — and `setup_grant` takes
   them in preference to going and earning the thing
-- `index.html` and `walkthrough.html` ≈ 1879 KB each — the same app, one as a
+- `index.html` and `walkthrough.html` ≈ 1969 KB each — the same app, one as a
   whole document and one as an Artifact fragment
 - the layout is clean of horizontal overflow from 320px up: `python
   _tools/probe.py` prints `0 findings` at all seven widths
@@ -1565,6 +1758,16 @@ Every one of these was a real bug. They will recur if the code is rewritten.
   these; there is no better name to use.
 - **`AlexForest3`** ("Forest with Alex Pregnant") has no incoming jump in 0.62d —
   it looks like unwired content, not an extraction failure.
+- **Cassidy's "Huh?" Memory can never unlock in 0.62d.** The tile is guarded
+  `cassidylove >= 6`, and `cassidylove` is a *different variable* from
+  `cassidyLove` — `script.rpy:149` declares it, `script.rpy:454` resets it, and
+  nothing anywhere increments it. It is the author's typo: the same tile under
+  the other eight girls reads `<char>Love >= 6`. The atlas does not claim to
+  earn it — the gate falls out of the fact model and is reported on the plan's
+  "Also required" card (landmine 15) rather than silently assumed — but the page
+  does not say outright that it is impossible, the way an unearnable dot does
+  (landmine 59). If a later version spells it `cassidyLove`, this becomes an
+  ordinary Love gate and the plan will fill itself in.
 - **`LinaSMS28` and `LinSMS0`** are declared but never granted anywhere, so they
   have no plan and are dropped. `LinaSMS28` even has a panel cell; `LinSMS0` has
   nothing. Both look like unwired content. (`Phone_Init` also restores
