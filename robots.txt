@@ -1,0 +1,10 @@
+# This site describes an adult game and quotes its scene and menu text verbatim.
+# None of that belongs in a search result, so nothing here asks to be indexed.
+#
+# Disallow stops the crawl but not the indexing -- a URL linked from elsewhere
+# can still surface bare. The `<meta name="robots" content="noindex, nofollow">`
+# on both index.html and atlas.html is the half that actually does the work;
+# this file is the declaration of intent, for the crawlers that read it first.
+
+User-agent: *
+Disallow: /

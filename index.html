@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- The landing is the one page at the bare URL, so it is the page a crawler, a
+     moderator or someone following a link actually lands on. Everything on it is
+     safe for that: it says what the atlas is, what is in it, and whose work it
+     describes, and it holds no quoted game text of its own.
+
+     Built by make_app.py from this file. The only substitution is :root{
+  --bg:#EDF0EF; --sunk:#E2E7E6; --surface:#FFFFFF; --raised:#F7F9F8;
+  --ink:#0E1618; --ink-2:#33474C; --muted:#63797E; --faint:#8CA0A4;
+  --line:#D2DBD9; --line-2:#BDC9C7;
+  --accent:#1E6B78; --accent-ink:#FFFFFF; --accent-wash:#DCECEE;
+  --tok-red:#B22B3C; --tok-green:#2E7D46; --tok-gold:#9A7412; --tok-blue:#2A5EA8;
+  --tok-red-bg:#FBE7E9; --tok-green-bg:#E2F1E7; --tok-gold-bg:#F7EDD6; --tok-blue-bg:#E3ECFA;
+  /* Explore mode is a second map behind the first, so it gets a hue of its own,
+     clear of the four token colours (those are reserved as data) and of the
+     moonstone accent (that means "what this gets you"). */
+  --explore:#6A54A6; --explore-ink:#FFFFFF; --explore-wash:#EDE9F8;
+  /* The weekend's four days. A neutral, biased toward the accent teal rather
+     than a stock grey, so a chapter heading reads as structure and never as
+     one more piece of data. */
+  --band:#E7EDEC; --band-line:#C6D2D0;
+  --on:#1E6B78; --off:#B2453C;
+  --shadow:0 1px 2px rgba(14,22,24,.06), 0 8px 24px -12px rgba(14,22,24,.18);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+    --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+    --line:#25353A; --line-2:#33474D;
+    --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+    --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+    --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+    --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+    --band:#1E2B30; --band-line:#364A50;
+    --on:#7FD1D9; --off:#EC7B85;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+  --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+  --line:#25353A; --line-2:#33474D;
+  --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+  --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+  --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+  --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+  --band:#1E2B30; --band-line:#364A50;
+  --on:#7FD1D9; --off:#EC7B85;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+},
+     which is the palette sliced out of _head.html between the palette:begin and
+     palette:end markers -- so the landing and the atlas cannot drift apart, and
+     the landing has no colours of its own to maintain. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="An unofficial, text-only walkthrough planner for the adult visual novel Cabin by the Lake. Adult content, 18+.">
+<title>Cabin Loop Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+:root{
+  --bg:#EDF0EF; --sunk:#E2E7E6; --surface:#FFFFFF; --raised:#F7F9F8;
+  --ink:#0E1618; --ink-2:#33474C; --muted:#63797E; --faint:#8CA0A4;
+  --line:#D2DBD9; --line-2:#BDC9C7;
+  --accent:#1E6B78; --accent-ink:#FFFFFF; --accent-wash:#DCECEE;
+  --tok-red:#B22B3C; --tok-green:#2E7D46; --tok-gold:#9A7412; --tok-blue:#2A5EA8;
+  --tok-red-bg:#FBE7E9; --tok-green-bg:#E2F1E7; --tok-gold-bg:#F7EDD6; --tok-blue-bg:#E3ECFA;
+  /* Explore mode is a second map behind the first, so it gets a hue of its own,
+     clear of the four token colours (those are reserved as data) and of the
+     moonstone accent (that means "what this gets you"). */
+  --explore:#6A54A6; --explore-ink:#FFFFFF; --explore-wash:#EDE9F8;
+  /* The weekend's four days. A neutral, biased toward the accent teal rather
+     than a stock grey, so a chapter heading reads as structure and never as
+     one more piece of data. */
+  --band:#E7EDEC; --band-line:#C6D2D0;
+  --on:#1E6B78; --off:#B2453C;
+  --shadow:0 1px 2px rgba(14,22,24,.06), 0 8px 24px -12px rgba(14,22,24,.18);
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+    --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+    --line:#25353A; --line-2:#33474D;
+    --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+    --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+    --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+    --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+    --band:#1E2B30; --band-line:#364A50;
+    --on:#7FD1D9; --off:#EC7B85;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1417; --sunk:#0A1013; --surface:#151F23; --raised:#1B272C;
+  --ink:#E9EEED; --ink-2:#C2D0D1; --muted:#8DA2A6; --faint:#6B8085;
+  --line:#25353A; --line-2:#33474D;
+  --accent:#7FD1D9; --accent-ink:#08181B; --accent-wash:#16333A;
+  --tok-red:#EC7B85; --tok-green:#7BD097; --tok-gold:#E2BA5E; --tok-blue:#84AEE8;
+  --tok-red-bg:#2C1A1E; --tok-green-bg:#16301F; --tok-gold-bg:#2E2515; --tok-blue-bg:#182338;
+  --explore:#B3A0E8; --explore-ink:#140F26; --explore-wash:#241E38;
+  --band:#1E2B30; --band-line:#364A50;
+  --on:#7FD1D9; --off:#EC7B85;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Karla",ui-sans-serif,system-ui,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%; text-size-adjust:100%;
+  overflow-x:hidden;
+}
+h1,h2{font-family:"Zilla Slab",Georgia,serif; margin:0; text-wrap:balance; font-weight:600}
+button{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+
+/* A phone is the narrow case that matters and probe.py sweeps this page from
+   320px up, so every horizontal measurement here is relative or clamped. */
+.wrap{
+  min-height:100vh; min-height:100dvh;
+  display:flex; align-items:center; justify-content:center;
+  padding:clamp(16px,4vw,44px);
+}
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:clamp(20px,4.5vw,38px);
+  max-width:62ch; width:100%; overflow-wrap:anywhere;
+}
+.brand{font-size:clamp(24px,5.2vw,33px); letter-spacing:-.015em}
+.brand span{color:var(--accent)}
+.tagline{color:var(--muted); font-size:14.5px; margin:6px 0 0}
+.tagline a{color:var(--accent)}
+h2{
+  font-size:13px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--muted); margin:26px 0 8px; font-family:"Karla",sans-serif; font-weight:700;
+}
+p{margin:0 0 11px; color:var(--ink-2); font-size:14.5px}
+p:last-child{margin-bottom:0}
+.warn{
+  border-left:3px solid var(--off); background:var(--sunk);
+  padding:13px 15px; border-radius:0 8px 8px 0; margin:0 0 12px;
+}
+.warn p{margin:0 0 8px}
+.warn p:last-child{margin-bottom:0}
+.small{color:var(--muted); font-size:13.5px}
+.act{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center}
+.yes,.no{
+  border-radius:8px; padding:12px 20px; cursor:pointer; font-weight:600;
+  font-size:14.5px; border:1px solid var(--line-2); background:var(--raised);
+  text-decoration:none; display:inline-block;
+}
+.yes{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.bye{margin-top:18px; font-weight:600; color:var(--ink-2)}
+/* --muted, not --faint: this is the non-affiliation and takedown notice, which
+   is the half of the page that has to be readable rather than merely present. */
+.foot{
+  margin-top:26px; padding-top:15px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:12.5px;
+}
+.foot a{color:var(--muted)}
+.foot p{color:inherit; font-size:inherit; margin:0 0 6px}
+[hidden]{display:none!important}
+
+@media (pointer:coarse){ .yes,.no{padding:14px 22px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<main class="card">
+
+  <h1 class="brand">Cabin Loop <span>Atlas</span></h1>
+  <p class="tagline">A walkthrough planner for
+     <a href="https://nunus-house.itch.io/cabin-by-the-lake" target="_blank" rel="noopener"><em>Cabin by the Lake</em></a>
+     0.62d</p>
+
+  <h2>What this is</h2>
+  <p>A reference tool. It reads the game's own scripts and works out which
+     corruption toggles to switch on before a run, and the exact choices to make
+     during it, for any scene, mail or collection dot you want to unlock.</p>
+  <p class="small">It is text only: no images, no audio, no game files, and no
+     part of the game itself.</p>
+
+  <h2>Adult content — 18+</h2>
+  <div class="warn">
+    <p>The game it describes is an adult visual novel. This tool names its
+       scenes and quotes its menu options and hint text verbatim, which means
+       explicit sexual language throughout.</p>
+    <p>Recurring themes include pregnancy and breeding, lactation, body
+       transformation, and hypnosis used as a sexual mechanic.</p>
+    <p class="small">All characters are adults, and none are related to the
+       player character. There is no imagery of any kind on this site.</p>
+  </div>
+
+  <h2>Please confirm</h2>
+  <p>You must be 18, or the age of majority where you live, whichever is
+     greater.</p>
+  <div class="act" id="act">
+    <a class="yes" id="yes" href="atlas.html">I am 18 or older</a>
+    <button class="no" id="no" type="button">I am under 18</button>
+  </div>
+  <p class="bye" id="bye" hidden>Come back when you're older.</p>
+
+  <div class="foot">
+    <h2>Not an official product</h2>
+    <p><em>Cabin by the Lake</em> is by Nunu. This is an unofficial fan tool
+       made by a player, and is not affiliated with, endorsed by, or connected
+       to the author.</p>
+    <p>No game assets — art, audio, script files, or the game itself — are
+       hosted or redistributed here; this site holds only structural data
+       derived from the game's compiled scripts in order to describe how to
+       play it. If you are the author and would like something changed or
+       removed, <a href="https://github.com/smeeguel/cabinbythelake-walkthrough/issues">open
+       an issue</a> and it will be dealt with.</p>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* "Enter" is a real link, so with JavaScript off it still works -- it just
+   arrives at atlas.html without the key, where that page's own gate asks the
+   same question. Both pages write the same key, which is what stops a visitor
+   who came the front way being asked twice. */
+(function(){
+  var yes = document.getElementById("yes");
+  if(yes) yes.onclick = function(){
+    try{ localStorage.setItem("cbtl-age-ok", "1"); }catch(e){}
+  };
+  var no = document.getElementById("no"), act = document.getElementById("act"),
+      bye = document.getElementById("bye");
+  if(no) no.onclick = function(){
+    /* No outbound navigation: where someone goes instead is not ours to pick. */
+    if(act) act.hidden = true;
+    if(bye) bye.hidden = false;
+  };
+})();
+</script>
+
+</body>
+</html>
